@@ -45,6 +45,12 @@ public:
 
    // Overloaded [] operator declaration
    T &operator[](const int &);
+   
+   //Push element to end of array
+   void push(T);
+   
+   //Pull (delete) element off end of array
+   void pull();
 };
 
 //***********************************************************
@@ -154,6 +160,35 @@ T &SimpleVector<T>::operator[](const int &sub)
    return aptr[sub];
 }
 
+template <class T>
+void SimpleVector<T>::push(T element){
+    //increase array size by 1 for new element
+    arraySize++;
+    //create temp array at new increased size
+    T* tmpArry=new T[arraySize];
+    //fill new temp array with old values
+    for(int i=0;i<arraySize-1;i++){
+        tmpArry[i]=aptr[i];
+    }
+    //pop back new element to end
+    tmpArry[arraySize-1]=element;
+    //copy temp array into class array
+    aptr=tmpArry;
+}
+
+template <class T>
+void SimpleVector<T>::pull(){
+    //decrease array size by 1
+    arraySize--;
+    //create temp array at new decreased size
+    T* tmpArry=new T[arraySize];
+    //fill new temp array with old values
+    for(int i=0;i<arraySize;i++){
+        tmpArry[i]=aptr[i];
+    }
+    //copy temp array into class array
+    aptr=tmpArry;
+}
 
 #endif	/* SIMPLEVECTOR_H */
 
