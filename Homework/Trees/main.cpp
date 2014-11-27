@@ -4,7 +4,7 @@
  *
  * Created on November 26, 2014, 2:29 PM
  * 
- * Functions to include would be insert, delete, balance, print with the 3 types of traversals.
+ * Functions to include would be -done-insert, delete, balance, -done-print with the 3 types of traversals.
  * Show that it works by randomly filling the tree, and selectively deleting elements and then traversing the tree.
  */
 
@@ -54,6 +54,11 @@ int main(int argc, char** argv) {
     else
         cout<<"false!"<<endl;
     
+    //remove a node
+    cout<<"Removing 8."<<endl;
+    tree.remove(8);
+    cout<<"New tree:"<<endl;
+    tree.displayInOrder();
     
     return 0;
 }

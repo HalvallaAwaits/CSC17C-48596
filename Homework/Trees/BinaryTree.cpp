@@ -77,6 +77,58 @@ bool BinaryTree::searchNode(int num){
     return false;    
 }
 
+//public delete function which calls the delete node function
+void BinaryTree::remove(int num){
+    deleteNode(num,root);
+}
+
+//delete node function which determines which node to delete
+void BinaryTree::deleteNode(int num, TreeNode *&nodePtr){
+    //if less than, keep searching to the left
+    if(num<nodePtr->value)
+        deleteNode(num,nodePtr->left);
+    //if greater than, keep searching to the right
+    else if(num>nodePtr->value)
+        deleteNode(num,nodePtr->right);
+    //if equal, move on with deletion
+    else
+        makeDeletion(nodePtr);
+}
+
+//actual deletion of node takes place here
+void BinaryTree::makeDeletion(TreeNode *&nodePtr){
+    //make temp pointer for use in re-attaching
+    TreeNode *tempNodePtr;
+    //make sure nodes exist
+    if(nodePtr==NULL)cout<<"Empty node cannot be deleted."<<endl;
+    //if only left child, re-attach to previous node
+    else if(nodePtr->right==NULL){
+        tempNodePtr=nodePtr;
+        nodePtr=nodePtr->left;
+        delete tempNodePtr;
+    }
+    //if only right child, re-attach to previous node
+    else if(nodePtr->left==NULL){
+        tempNodePtr=nodePtr;
+        nodePtr=nodePtr->right;
+        delete tempNodePtr;
+    }
+    //if the node has two children
+    else{
+        //move temp to to the right
+        tempNodePtr=nodePtr->right;
+        //traverse to end of left node
+        while(tempNodePtr->left)
+            tempNodePtr=tempNodePtr->left;
+        //re-attach left subtree
+        tempNodePtr->left=nodePtr->left;
+        tempNodePtr=nodePtr;
+        //re-attach right subtree
+        nodePtr=nodePtr->right;
+        delete tempNodePtr;
+    }
+}
+
 //Destructor
 void BinaryTree::destroySubTree(TreeNode *nodePtr){
     if(nodePtr){
