@@ -11,7 +11,7 @@
 #include "BinaryTree.h"
 using namespace std;
 
-
+//public insert function
 void BinaryTree::insertNode(int num){
     //create new node to hold value
     TreeNode *newNode=new TreeNode;    //points to new node
@@ -23,6 +23,7 @@ void BinaryTree::insertNode(int num){
     
 }
 
+//insert function
 void BinaryTree::insert(TreeNode *&nodePtr, TreeNode *&newNode){
     //if insert location is NULL then insert
     if(nodePtr==NULL)
@@ -35,8 +36,39 @@ void BinaryTree::insert(TreeNode *&nodePtr, TreeNode *&newNode){
         insert(nodePtr->right,newNode);
 }
 
+//in order display function
 void BinaryTree::displayInOrder(TreeNode *nodePtr) const{
-    if(nodePtr){     //if root exists output via in order traversal
-        
+    if(nodePtr){
+        displayInOrder(nodePtr->left);
+        cout<<nodePtr->value<<endl;
+        displayInOrder(nodePtr->right);
+    }
+}
+
+//pre order display function
+void BinaryTree::displayPreOrder(TreeNode *nodePtr) const{
+    if(nodePtr){
+        cout<<nodePtr->value<<endl;
+        displayPreOrder(nodePtr->left);
+        displayPreOrder(nodePtr->right);
+    }
+}
+
+//post order display function
+void BinaryTree::displayPostOrder(TreeNode *nodePtr) const{
+    if(nodePtr){
+        displayPostOrder(nodePtr->left);
+        displayPostOrder(nodePtr->right);
+        cout<<nodePtr->value<<endl;
+    }
+}
+
+void BinaryTree::destroySubTree(TreeNode *nodePtr){
+    if(nodePtr){
+        if(nodePtr->left)
+            destroySubTree(nodePtr->left);
+        if(nodePtr->right)
+            destroySubTree(nodePtr->right);
+        delete nodePtr;
     }
 }
