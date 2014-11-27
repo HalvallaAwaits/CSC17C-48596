@@ -23,8 +23,8 @@ int main(int argc, char** argv) {
     
     cout<<"Inserting nodes. ";
     tree.insertNode(5);
-    tree.insertNode(8);
     tree.insertNode(3);
+    tree.insertNode(8);
     tree.insertNode(12);
     tree.insertNode(9);
     cout<<"Done."<<endl;
@@ -43,6 +43,17 @@ int main(int argc, char** argv) {
     cout<<"Post order traversal:"<<endl;
     tree.displayPostOrder();
     cout<<endl;
+    
+    //Search for a value in tree
+    cout<<"Search for value 8 in tree: ";
+    if(tree.searchNode(8)==1)cout<<"true!"<<endl;
+    else
+        cout<<"false!"<<endl;
+    cout<<"Search for value 7 in tree: ";
+    if(tree.searchNode(7)==1)cout<<"true!"<<endl;
+    else
+        cout<<"false!"<<endl;
+    
     
     return 0;
 }

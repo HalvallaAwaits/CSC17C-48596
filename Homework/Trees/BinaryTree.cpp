@@ -63,6 +63,21 @@ void BinaryTree::displayPostOrder(TreeNode *nodePtr) const{
     }
 }
 
+//search function
+bool BinaryTree::searchNode(int num){
+    TreeNode *nodePtr=root;
+    while (nodePtr){
+        if(nodePtr->value==num)
+            return true;
+        else if(num<nodePtr->value)
+            nodePtr=nodePtr->left;
+        else
+            nodePtr=nodePtr->right;
+    }
+    return false;    
+}
+
+//Destructor
 void BinaryTree::destroySubTree(TreeNode *nodePtr){
     if(nodePtr){
         if(nodePtr->left)
