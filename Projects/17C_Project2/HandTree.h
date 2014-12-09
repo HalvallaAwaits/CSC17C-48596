@@ -8,6 +8,7 @@
 //Libraries
 #include <iostream>
 #include "Card.h"
+#include "Player.h"
 using namespace std;
 
 #ifndef HANDTREE_H
@@ -28,7 +29,7 @@ private:
     void destroySubTree(TreeNode *);
     void deleteNode(Card,TreeNode *&);
     void makeDeletion(TreeNode *&);
-    void displayInOrder(TreeNode *) const;
+    void displayInOrder(TreeNode *,Player) const;
     void displayPreOrder(TreeNode *) const;
     void displayPostOrder(TreeNode *) const;
 public:
@@ -46,8 +47,7 @@ public:
     //Accessors
     bool searchNode(Card);
     //Displays using all 3 versions of traversal
-    void displayInOrder() const
-        {displayInOrder(root);}
+    void displayInOrder(Player) const;
     void displayPreOrder() const
         {displayPreOrder(root);}
     void displayPostOrder() const

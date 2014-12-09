@@ -40,7 +40,7 @@ void result(Player &,Player &,bool &,bool &,map<string,int> &,int);
 void reset(DeckStack &,Player &,Player &,int,int &,bool &,bool &,HandTree &,HandTree &, vector<Card>);
 void userInfo(Player &);
 void write(Player);
-//void display(Player,HandQueue,Player,HandQueue);
+void display(Player,Player,HandTree,HandTree);
 
 //Execution Begins Here
 int main(int argc, char** argv) {
@@ -245,9 +245,9 @@ void frstDeal(DeckStack &myDeck,int &nDealt, Player &p1, Player &cpu,HandTree &p
             cout<<p1.getName()<<" receives card: "<<crdCatch.getName()<<crdCatch.getSuit()
                 <<endl<<p1.getName()<<"'s hand value: "<<p1.getValue()<<endl;
             cout<<p1.getName()<<" has "<<p1HandT.getNumHand()<<" cards in hand."<<endl;
-            //tree display
-            cout<<p1.getName()<<"'s current hand in TREE: ";
-            p1HandT.displayPostOrder();
+            //hand display
+            cout<<p1.getName()<<"'s current hand: ";
+            p1HandT.displayInOrder(p1);
             cout<<endl;
         }
         if(i%2==1){
@@ -266,16 +266,11 @@ void frstDeal(DeckStack &myDeck,int &nDealt, Player &p1, Player &cpu,HandTree &p
                 cpu.setValue(crdCatch.getValue());
             if(nDealt==1){
                 cout<<endl<<"CPU receives hidden card."<<endl;
-                cout<<cpu.getName()<<"'s current hand in TREE: ";
-                cpuHandT.displayPostOrder();
-                cout<<endl<<endl;
+                cout<<endl;
             }
             else{
                 cout<<endl<<"CPU receives card: "<<crdCatch.getName()<<crdCatch.getSuit()<<endl;
                 cout<<"CPU has "<<cpuHandT.getNumHand()<<" cards in hand."<<endl;
-                //tree display
-                cout<<cpu.getName()<<"'s current hand in TREE: ";
-                cpuHandT.displayPostOrder();
                 cout<<endl;
             }
             nDealt++;
@@ -298,10 +293,14 @@ void deal(DeckStack &myDeck,int &nDealt,Player &plyr,HandTree &handT){
         plyr.setValue(crdCatch.getValue());
     cout<<plyr.getName()<<" hits and receives card: "<<crdCatch.getName()<<crdCatch.getSuit()<<endl;
     cout<<plyr.getName()<<" has "<<handT.getNumHand()<<" cards in hand."<<endl;
-    //tree display
-    cout<<plyr.getName()<<"'s current hand in TREE: ";
-    handT.displayPostOrder();
-    cout<<endl;
+    //display hand
+    string pname;
+    pname=plyr.getName();
+    if(plyr.getName()!="CPU"){
+        cout<<plyr.getName()<<"'s current hand: ";
+        handT.displayInOrder(plyr);
+        cout<<endl;
+    }
 }
 
 void plyrTrn(Player &p1,DeckStack &myDeck,bool &p1bj,int &nDealt,HandTree &p1HandT){
@@ -496,20 +495,8 @@ void write(Player p1){
     outFile.close();
 }
 
-/*
-void display(Player p1,HandQueue p1Hand,Player cpu,HandQueue cpuHand){
-    HandQueue tmpP1Hand=p1Hand;      //temporary to pop cards out of p1Hand and display
-    Card crdCatch;                   //catch cards to display
+void display(Player p1,Player cpu,HandTree p1HandT,HandTree cpuHandT){
+    p1HandT.displayInOrder(p1);
+    cpuHandT.displayInOrder(cpu);
     
-    cout<<" "<<p1.getName()<<"'s hand:"<<endl;
-    for(int i=0;i<p1Hand.getNumHand();i++){
-        tmpP1Hand.dequeue(crdCatch);
-        cout<<"  ________       "<<endl;
-        cout<<" |"<<crdCatch.getName()<<crdCatch.getSuit()<<"      |      "<<endl;
-        cout<<" |        |      "<<endl;
-        cout<<" |        |      "<<endl;
-        cout<<" |        |      "<<endl;
-        cout<<" |______"<<crdCatch.getName()<<crdCatch.getSuit()<<"|      "<<endl;
-    }
 }
-*/

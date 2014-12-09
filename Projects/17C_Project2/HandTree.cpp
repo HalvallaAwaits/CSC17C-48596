@@ -42,12 +42,22 @@ void HandTree::insert(TreeNode *&nodePtr, TreeNode *&newNode){
         insert(nodePtr->right,newNode);
 }
 
+void HandTree::displayInOrder(Player p) const{
+    displayInOrder(root,p);
+}
+
 //in order display function
-void HandTree::displayInOrder(TreeNode *nodePtr) const{
+void HandTree::displayInOrder(TreeNode *nodePtr, Player p) const{
     if(nodePtr){
-        displayInOrder(nodePtr->left);
-        cout<<nodePtr->data.getName()<<nodePtr->data.getSuit()<<" ";
-        displayInOrder(nodePtr->right);
+        displayInOrder(nodePtr->left,p);
+        cout<<endl;
+        cout<<"  ________       "<<endl;
+        cout<<" |"<<nodePtr->data.getName()<<nodePtr->data.getSuit()<<"      |      "<<endl;
+        cout<<" |        |      "<<endl;
+        cout<<" |        |      "<<endl;
+        cout<<" |        |      "<<endl;
+        cout<<" |______"<<nodePtr->data.getName()<<nodePtr->data.getSuit()<<"|      "<<endl;
+        displayInOrder(nodePtr->right,p);
     }
 }
 
