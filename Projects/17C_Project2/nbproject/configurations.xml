@@ -6,7 +6,6 @@
                    projectFiles="true">
       <itemPath>Card.h</itemPath>
       <itemPath>DeckStack.h</itemPath>
-      <itemPath>Hand.h</itemPath>
       <itemPath>HandTree.h</itemPath>
       <itemPath>Player.h</itemPath>
     </logicalFolder>
@@ -19,7 +18,6 @@
                    projectFiles="true">
       <itemPath>Card.cpp</itemPath>
       <itemPath>DeckStack.cpp</itemPath>
-      <itemPath>Hand.cpp</itemPath>
       <itemPath>HandTree.cpp</itemPath>
       <itemPath>Player.cpp</itemPath>
       <itemPath>main.cpp</itemPath>
@@ -53,10 +51,6 @@
       <item path="DeckStack.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="DeckStack.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="Hand.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="Hand.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="HandTree.cpp" ex="false" tool="1" flavor2="0">
       </item>
@@ -96,10 +90,6 @@
       <item path="DeckStack.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="DeckStack.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="Hand.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="Hand.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="HandTree.cpp" ex="false" tool="1" flavor2="0">
       </item>

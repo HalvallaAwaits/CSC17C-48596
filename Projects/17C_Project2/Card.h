@@ -13,7 +13,7 @@ private:
     char number;     //card's creation number (used to determine following)
     char name;       //holds card's "name(1,5,10,J,A,etc)
     char suit;       //holds card's suit
-    int value;      //holds card's value
+    int value;       //holds card's value
 public:
     //Constructors
     Card();

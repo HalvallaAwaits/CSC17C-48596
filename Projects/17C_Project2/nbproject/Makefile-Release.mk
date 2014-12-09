@@ -37,7 +37,6 @@ OBJECTDIR=${CND_BUILDDIR}/${CND_CONF}/${CND_PLATFORM}
 OBJECTFILES= \
 	${OBJECTDIR}/Card.o \
 	${OBJECTDIR}/DeckStack.o \
-	${OBJECTDIR}/Hand.o \
 	${OBJECTDIR}/HandTree.o \
 	${OBJECTDIR}/Player.o \
 	${OBJECTDIR}/main.o
@@ -76,11 +75,6 @@ ${OBJECTDIR}/DeckStack.o: DeckStack.cpp
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} "$@.d"
 	$(COMPILE.cc) -O2 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/DeckStack.o DeckStack.cpp
-
-${OBJECTDIR}/Hand.o: Hand.cpp 
-	${MKDIR} -p ${OBJECTDIR}
-	${RM} "$@.d"
-	$(COMPILE.cc) -O2 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/Hand.o Hand.cpp
 
 ${OBJECTDIR}/HandTree.o: HandTree.cpp 
 	${MKDIR} -p ${OBJECTDIR}

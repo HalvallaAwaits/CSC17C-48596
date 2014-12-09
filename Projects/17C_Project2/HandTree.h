@@ -7,6 +7,7 @@
 
 //Libraries
 #include <iostream>
+#include "Card.h"
 using namespace std;
 
 #ifndef HANDTREE_H
@@ -15,34 +16,35 @@ using namespace std;
 class HandTree{
 private:
     struct TreeNode{
-        int value;            //Holds the value in the node
+        Card data;            //Holds card data
         TreeNode *left;       //Points to the left child node
         TreeNode *right;      //Points to the right child node
     };
     TreeNode *root;           //Points to the root node
+    int numHand;              //number of cards in hand
     
     //Private Member functions
     void insert(TreeNode *&, TreeNode *&);
     void destroySubTree(TreeNode *);
-    void deleteNode(int,TreeNode *&);
+    void deleteNode(Card,TreeNode *&);
     void makeDeletion(TreeNode *&);
     void displayInOrder(TreeNode *) const;
     void displayPreOrder(TreeNode *) const;
     void displayPostOrder(TreeNode *) const;
-    
 public:
     //Private Member Functions
     //Constructor
-    HandTree()
-        {root=NULL;}
+    HandTree();
     //Destructor
     ~HandTree()
         {destroySubTree(root);}
     //Mutators
-    void insertNode(int);
-    void remove(int);
+    void insertNode(Card);
+    void remove(Card);
+    void resetNumHand()
+        {numHand=0;}
     //Accessors
-    bool searchNode(int);
+    bool searchNode(Card);
     //Displays using all 3 versions of traversal
     void displayInOrder() const
         {displayInOrder(root);}
@@ -50,6 +52,8 @@ public:
         {displayPreOrder(root);}
     void displayPostOrder() const
         {displayPostOrder(root);}    
+    int getNumHand()
+        {return numHand;}
 };
 
 #endif	/* HANDTREE_H */

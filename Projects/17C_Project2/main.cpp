@@ -4,7 +4,7 @@
  *
  * Created on December 5, 2014, 4:04 PM
 
- * Implement a tree - Change the hand from a queue into a tree
+ * Tree completed   - Player and CPU hands are stored in binary trees
  * Hash completed   - Password is hashed and stored, compared when attempting
  *                    to log into an existing player account.
  * If time permits: Clean up the display so the game looks more like a game
@@ -26,21 +26,21 @@ using namespace std;
 //Our Libraries
 #include "Card.h"
 #include "DeckStack.h"
-#include "Hand.h"
 #include "Player.h"
 #include "HandTree.h"
 
 //Function Prototypes
 vector<Card> bldDck(int);
 void shuffle(vector<Card> &,int,DeckStack &);
-void frstDeal(DeckStack &,HandQueue &,HandQueue &,int &, Player &, Player &);
-void deal(DeckStack &,HandQueue &,int &,Player &);
-void plyrTrn(Player &,DeckStack &,HandQueue &,bool &,int &);
-void cpuTrn(Player &,DeckStack &,HandQueue &,bool &,int &);
+void frstDeal(DeckStack &,int &, Player &, Player &,HandTree &,HandTree &);
+void deal(DeckStack &,int &,Player &,HandTree &);
+void plyrTrn(Player &,DeckStack &,bool &,int &,HandTree &);
+void cpuTrn(Player &,DeckStack &,bool &,int &,HandTree &);
 void result(Player &,Player &,bool &,bool &,map<string,int> &,int);
-void reset(HandQueue &,HandQueue &,DeckStack &,Player &,Player &,int,int &,bool &,bool &);
+void reset(DeckStack &,Player &,Player &,int,int &,bool &,bool &,HandTree &,HandTree &, vector<Card>);
 void userInfo(Player &);
 void write(Player);
+//void display(Player,HandQueue,Player,HandQueue);
 
 //Execution Begins Here
 int main(int argc, char** argv) {
@@ -51,8 +51,8 @@ int main(int argc, char** argv) {
     DeckStack myDeck;            //holds a shuffled deck in stack form
     std::srand(std::time(0));    //seed random number generator
     Card crdCatch;               //holds popped cards from stack/queue
-    HandQueue p1Hand;            //player's hand in queue form
-    HandQueue cpuHand;           //cpu's hand in queue form
+    HandTree p1HandT;             //player's hand
+    HandTree cpuHandT;            //cpu's hand
     char user;                   //if player is new to game or not
     Player p1;                   //holds player's info
     Player cpu;                  //holds cpu's info
@@ -88,16 +88,17 @@ int main(int argc, char** argv) {
             cout<<"How much would you like to bet (min 5)? ";
             cin>>betAmnt;
         }while(betAmnt<5);
+        cout<<endl;
         //initial deal of two cards to player and cpu
-        frstDeal(myDeck,p1Hand,cpuHand,nDealt,p1,cpu);
+        frstDeal(myDeck,nDealt,p1,cpu,p1HandT,cpuHandT);
         //Player's hit/stand phase
-        plyrTrn(p1,myDeck,p1Hand,p1bj,nDealt);
+        plyrTrn(p1,myDeck,p1bj,nDealt,p1HandT);
         //CPU's hit/stand phase
-        cpuTrn(cpu,myDeck,cpuHand,cpubj,nDealt);        
+        cpuTrn(cpu,myDeck,cpubj,nDealt,cpuHandT);        
         //determine winner/loss/push
         result(p1,cpu,p1bj,cpubj,score_map,betAmnt);
         //reset and reshuffle for continued play
-        reset(p1Hand,cpuHand,myDeck,p1,cpu,nCards,nDealt,p1bj,cpubj);
+        reset(myDeck,p1,cpu,nCards,nDealt,p1bj,cpubj,p1HandT,cpuHandT,unshflDck);
         shuffle(unshflDck,nCards,myDeck);
         //Ask if user would like to play the game again
         cout<<"Would you like to play again? (Y/N)"<<endl;
@@ -135,11 +136,9 @@ void userInfo(Player &p1){
     //prompt for user info
     cout<<"Enter a user ID (if new, will be created): "<<endl;
     cin>>p1name;
-    
     //attempt to open file based on given ID
     fName=p1name+".txt";
     myFile.open(fName.c_str());
-    
     //check to see if file was opened
     if(!myFile.is_open()){
         //if file not opened, create new user
@@ -186,8 +185,7 @@ void userInfo(Player &p1){
                 p1.setLosses(losses);
                 myFile>>pushes;
                 p1.setPushes(pushes);
-                
-                //test output of all read in information to make sure accurate
+                //output all information
                 cout<<"Name: "<<p1.getName()<<endl;
                 cout<<"Funds: "<<p1.getFunds()<<endl;
                 cout<<"Wins: "<<p1.getWins()<<endl;
@@ -224,13 +222,13 @@ void shuffle(vector<Card> &deck,int n,DeckStack &dckStck){
     }
 }
 
-void frstDeal(DeckStack &myDeck,HandQueue &p1Hand,HandQueue &cpuHand,int &nDealt, Player &p1, Player &cpu){
+void frstDeal(DeckStack &myDeck,int &nDealt, Player &p1, Player &cpu,HandTree &p1HandT,HandTree &cpuHandT){
     //initial deal to players
     Card crdCatch;          //holds cards popped
     for(int i=0;i<4;i++){
         if(i%2==0){
             myDeck.pop(crdCatch);
-            p1Hand.enqueue(crdCatch);
+            p1HandT.insertNode(crdCatch);
             //if first draw is ace set val to 11 instead of 1
             if(crdCatch.getName()=='A'&&nDealt==0)
                 p1.setValue(11);
@@ -246,11 +244,15 @@ void frstDeal(DeckStack &myDeck,HandQueue &p1Hand,HandQueue &cpuHand,int &nDealt
             nDealt++;
             cout<<p1.getName()<<" receives card: "<<crdCatch.getName()<<crdCatch.getSuit()
                 <<endl<<p1.getName()<<"'s hand value: "<<p1.getValue()<<endl;
-            cout<<p1.getName()<<" has "<<p1Hand.getNumHand()<<" cards in hand."<<endl<<endl;
+            cout<<p1.getName()<<" has "<<p1HandT.getNumHand()<<" cards in hand."<<endl;
+            //tree display
+            cout<<p1.getName()<<"'s current hand in TREE: ";
+            p1HandT.displayPostOrder();
+            cout<<endl;
         }
         if(i%2==1){
             myDeck.pop(crdCatch);
-            cpuHand.enqueue(crdCatch);
+            cpuHandT.insertNode(crdCatch);
             //if first draw is ace set val to 11 instead of 1
             if(crdCatch.getName()=='A'&&nDealt==0)
                 cpu.setValue(11);
@@ -262,21 +264,29 @@ void frstDeal(DeckStack &myDeck,HandQueue &p1Hand,HandQueue &cpuHand,int &nDealt
                 cpu.setValue(1);
             else
                 cpu.setValue(crdCatch.getValue());
-            if(nDealt==1)
-                cout<<"CPU receives hidden card."<<endl<<endl;
+            if(nDealt==1){
+                cout<<endl<<"CPU receives hidden card."<<endl;
+                cout<<cpu.getName()<<"'s current hand in TREE: ";
+                cpuHandT.displayPostOrder();
+                cout<<endl<<endl;
+            }
             else{
-                cout<<"CPU receives card: "<<crdCatch.getName()<<crdCatch.getSuit()<<endl;
-                cout<<"CPU has "<<cpuHand.getNumHand()<<" cards in hand."<<endl<<endl;
+                cout<<endl<<"CPU receives card: "<<crdCatch.getName()<<crdCatch.getSuit()<<endl;
+                cout<<"CPU has "<<cpuHandT.getNumHand()<<" cards in hand."<<endl;
+                //tree display
+                cout<<cpu.getName()<<"'s current hand in TREE: ";
+                cpuHandT.displayPostOrder();
+                cout<<endl;
             }
             nDealt++;
         }
-    }    
+    }
 }
 
-void deal(DeckStack &myDeck,HandQueue &hand,int &nDealt,Player &plyr){
+void deal(DeckStack &myDeck,int &nDealt,Player &plyr,HandTree &handT){
     Card crdCatch;       //holds popped cards
     myDeck.pop(crdCatch);
-    hand.enqueue(crdCatch);
+    handT.insertNode(crdCatch);
     //determine value of aces drawn
     if(crdCatch.getName()=='A'){
         if(plyr.getValue()<=10)
@@ -287,11 +297,14 @@ void deal(DeckStack &myDeck,HandQueue &hand,int &nDealt,Player &plyr){
     else
         plyr.setValue(crdCatch.getValue());
     cout<<plyr.getName()<<" hits and receives card: "<<crdCatch.getName()<<crdCatch.getSuit()<<endl;
-    cout<<plyr.getName()<<" has "<<hand.getNumHand()<<" cards in hand."<<endl<<endl;
-    nDealt++;
+    cout<<plyr.getName()<<" has "<<handT.getNumHand()<<" cards in hand."<<endl;
+    //tree display
+    cout<<plyr.getName()<<"'s current hand in TREE: ";
+    handT.displayPostOrder();
+    cout<<endl;
 }
 
-void plyrTrn(Player &p1,DeckStack &myDeck,HandQueue &p1Hand,bool &p1bj,int &nDealt){
+void plyrTrn(Player &p1,DeckStack &myDeck,bool &p1bj,int &nDealt,HandTree &p1HandT){
     int choice;                  //holds decision to hit, stand, etc
     
     //check for blackjack from initial deal
@@ -301,7 +314,7 @@ void plyrTrn(Player &p1,DeckStack &myDeck,HandQueue &p1Hand,bool &p1bj,int &nDea
     }
     if(p1.getValue()<21){
         do{
-            cout<<p1.getName()<<" hand total: "<<p1.getValue()<<endl;
+            cout<<endl<<p1.getName()<<" hand total: "<<p1.getValue()<<endl;
             cout<<"What would you like to do?"<<endl;
             cout<<"1. Hit"<<endl<<"2. Stand"<<endl;
             do{
@@ -309,7 +322,7 @@ void plyrTrn(Player &p1,DeckStack &myDeck,HandQueue &p1Hand,bool &p1bj,int &nDea
             }while(choice!=1&&choice!=2);
             cout<<endl;
             if(choice==1){
-                deal(myDeck,p1Hand,nDealt,p1);
+                deal(myDeck,nDealt,p1,p1HandT);
             }
         }while(choice==1&&p1.getValue()<=21);
         //output result of player's hits/stand
@@ -319,7 +332,7 @@ void plyrTrn(Player &p1,DeckStack &myDeck,HandQueue &p1Hand,bool &p1bj,int &nDea
     cout<<endl;
 }
 
-void cpuTrn(Player &cpu,DeckStack &myDeck,HandQueue &cpuHand,bool &cpubj,int &nDealt){
+void cpuTrn(Player &cpu,DeckStack &myDeck,bool &cpubj,int &nDealt,HandTree &cpuHandT){
     cout<<"The CPU is now going to hit/stand."<<endl;
     //if cpu has blackjack
     if(cpu.getValue()==21){
@@ -333,7 +346,7 @@ void cpuTrn(Player &cpu,DeckStack &myDeck,HandQueue &cpuHand,bool &cpubj,int &nD
     //hit if under 17
     else{
         do{
-            deal(myDeck,cpuHand,nDealt,cpu);
+            deal(myDeck,nDealt,cpu,cpuHandT);
         }while(cpu.getValue()<=16);
     }
 }
@@ -441,18 +454,24 @@ void result(Player &p1, Player &cpu,bool &p1bj,bool &cpubj,map<string,int> &scor
     }
 }
 
-void reset(HandQueue &p1Hand,HandQueue &cpuHand,DeckStack &dckStck,Player &p1,Player &cpu,int n,int &nDealt,bool &p1bj,bool &cpubj){
+void reset(DeckStack &dckStck,Player &p1,Player &cpu,int n,int &nDealt,bool &p1bj,bool &cpubj,HandTree &p1HandT,HandTree &cpuHandT, vector<Card> deck){
     Card card;       //used to pop cards out of deck
     //empty player and CPU hands
-    p1Hand.clear();
-    cpuHand.clear();
+    for(int i=0;i<deck.size();i++){
+        if(p1HandT.searchNode(deck[i]))p1HandT.remove(deck[i]);
+        if(cpuHandT.searchNode(deck[i]))cpuHandT.remove(deck[i]);
+    }
+    for(int i=0;i<deck.size();i++){
+        if(p1HandT.searchNode(deck[i]))p1HandT.remove(deck[i]);
+        if(cpuHandT.searchNode(deck[i]))cpuHandT.remove(deck[i]);
+    }
     //clear current deck stack to put fresh shuffled deck in
     while(!dckStck.isEmpty()){
         dckStck.pop(card);
     }
     //clear player info and cards dealt
-    p1Hand.resetNumHand();
-    cpuHand.resetNumHand();
+    p1HandT.resetNumHand();
+    cpuHandT.resetNumHand();
     p1.resetValue();
     cpu.resetValue();
     p1bj=false;
@@ -461,7 +480,6 @@ void reset(HandQueue &p1Hand,HandQueue &cpuHand,DeckStack &dckStck,Player &p1,Pl
 }
 
 void write(Player p1){
-
     string fName;                 //holds file name
     ofstream outFile;            //to output player info to file
     
@@ -477,3 +495,21 @@ void write(Player p1){
     outFile<<p1.getPushes()<<"\r\n";
     outFile.close();
 }
+
+/*
+void display(Player p1,HandQueue p1Hand,Player cpu,HandQueue cpuHand){
+    HandQueue tmpP1Hand=p1Hand;      //temporary to pop cards out of p1Hand and display
+    Card crdCatch;                   //catch cards to display
+    
+    cout<<" "<<p1.getName()<<"'s hand:"<<endl;
+    for(int i=0;i<p1Hand.getNumHand();i++){
+        tmpP1Hand.dequeue(crdCatch);
+        cout<<"  ________       "<<endl;
+        cout<<" |"<<crdCatch.getName()<<crdCatch.getSuit()<<"      |      "<<endl;
+        cout<<" |        |      "<<endl;
+        cout<<" |        |      "<<endl;
+        cout<<" |        |      "<<endl;
+        cout<<" |______"<<crdCatch.getName()<<crdCatch.getSuit()<<"|      "<<endl;
+    }
+}
+*/

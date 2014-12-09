@@ -11,16 +11,22 @@
 #include "HandTree.h"
 using namespace std;
 
+//Constructor
+HandTree::HandTree(){
+    root=NULL;
+    numHand=0;
+}
+
 //public insert function
-void HandTree::insertNode(int num){
+void HandTree::insertNode(Card crd){
     //create new node to hold value
     TreeNode *newNode=new TreeNode;    //points to new node
-    newNode->value=num;
+    newNode->data=crd;
     newNode->left=newNode->right=NULL;
     
     //Insert the node
     insert(root,newNode);
-    
+    numHand++;
 }
 
 //insert function
@@ -29,7 +35,7 @@ void HandTree::insert(TreeNode *&nodePtr, TreeNode *&newNode){
     if(nodePtr==NULL)
         nodePtr=newNode;
     //if node exists, compare new value, if lesser, continue search left
-    else if(newNode->value<nodePtr->value)
+    else if(newNode->data.getValue()<nodePtr->data.getValue())
         insert(nodePtr->left,newNode);
     //if node exists, compare new value, if greater, continue search right
     else
@@ -40,7 +46,7 @@ void HandTree::insert(TreeNode *&nodePtr, TreeNode *&newNode){
 void HandTree::displayInOrder(TreeNode *nodePtr) const{
     if(nodePtr){
         displayInOrder(nodePtr->left);
-        cout<<nodePtr->value<<endl;
+        cout<<nodePtr->data.getName()<<nodePtr->data.getSuit()<<" ";
         displayInOrder(nodePtr->right);
     }
 }
@@ -48,7 +54,7 @@ void HandTree::displayInOrder(TreeNode *nodePtr) const{
 //pre order display function
 void HandTree::displayPreOrder(TreeNode *nodePtr) const{
     if(nodePtr){
-        cout<<nodePtr->value<<endl;
+        cout<<nodePtr->data.getName()<<nodePtr->data.getSuit()<<" ";
         displayPreOrder(nodePtr->left);
         displayPreOrder(nodePtr->right);
     }
@@ -59,17 +65,17 @@ void HandTree::displayPostOrder(TreeNode *nodePtr) const{
     if(nodePtr){
         displayPostOrder(nodePtr->left);
         displayPostOrder(nodePtr->right);
-        cout<<nodePtr->value<<endl;
+        cout<<nodePtr->data.getName()<<nodePtr->data.getSuit()<<" ";
     }
 }
 
 //search function
-bool HandTree::searchNode(int num){
+bool HandTree::searchNode(Card crd){
     TreeNode *nodePtr=root;
     while (nodePtr){
-        if(nodePtr->value==num)
+        if(nodePtr->data.getName()==crd.getName()&&nodePtr->data.getSuit()==crd.getSuit())
             return true;
-        else if(num<nodePtr->value)
+        else if(crd.getValue()<nodePtr->data.getValue())
             nodePtr=nodePtr->left;
         else
             nodePtr=nodePtr->right;
@@ -78,18 +84,18 @@ bool HandTree::searchNode(int num){
 }
 
 //public delete function which calls the delete node function
-void HandTree::remove(int num){
-    deleteNode(num,root);
+void HandTree::remove(Card crd){
+    deleteNode(crd,root);
 }
 
 //delete node function which determines which node to delete
-void HandTree::deleteNode(int num, TreeNode *&nodePtr){
+void HandTree::deleteNode(Card crd, TreeNode *&nodePtr){
     //if less than, keep searching to the left
-    if(num<nodePtr->value)
-        deleteNode(num,nodePtr->left);
+    if(crd.getValue()<nodePtr->data.getValue())
+        deleteNode(crd,nodePtr->left);
     //if greater than, keep searching to the right
-    else if(num>nodePtr->value)
-        deleteNode(num,nodePtr->right);
+    else if(crd.getValue()>nodePtr->data.getValue())
+        deleteNode(crd,nodePtr->right);
     //if equal, move on with deletion
     else
         makeDeletion(nodePtr);
