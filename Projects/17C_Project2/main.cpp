@@ -7,8 +7,8 @@
  * Tree completed   - Player and CPU hands are stored in binary trees
  * Hash completed   - Password is hashed and stored, compared when attempting
  *                    to log into an existing player account.
- * If time permits: Clean up the display so the game looks more like a game
- *                  Function out more steps, betting, hit/stand decisions, etc
+ * Queue removed    - Was demonstrated in midterm, previously the hand was
+ *                    stored as a queue
  */
 
 //Libraries
@@ -21,6 +21,7 @@
 #include <string>
 #include <map>
 #include <fstream>
+#include <sstream>
 using namespace std;
 
 //Our Libraries
@@ -33,14 +34,14 @@ using namespace std;
 vector<Card> bldDck(int);
 void shuffle(vector<Card> &,int,DeckStack &);
 void frstDeal(DeckStack &,int &, Player &, Player &,HandTree &,HandTree &);
-void deal(DeckStack &,int &,Player &,HandTree &);
-void plyrTrn(Player &,DeckStack &,bool &,int &,HandTree &);
-void cpuTrn(Player &,DeckStack &,bool &,int &,HandTree &);
+void deal(DeckStack &,int &,Player &,HandTree &,bool);
+void plyrTrn(Player &,DeckStack &,bool &,int &,HandTree &,bool);
+void cpuTrn(Player &,DeckStack &,bool &,int &,HandTree &,bool &);
 void result(Player &,Player &,bool &,bool &,map<string,int> &,int);
-void reset(DeckStack &,Player &,Player &,int,int &,bool &,bool &,HandTree &,HandTree &, vector<Card>);
+void reset(DeckStack &,Player &,Player &,int,int &,bool &,bool &,HandTree &,HandTree &, vector<Card>,bool &);
 void userInfo(Player &);
 void write(Player);
-void display(Player,Player,HandTree,HandTree);
+void display(Player &,HandTree &,bool);
 
 //Execution Begins Here
 int main(int argc, char** argv) {
@@ -61,6 +62,7 @@ int main(int argc, char** argv) {
     char again;                  //holds decision to play again
     bool p1bj=false;             //player got a blackjack
     bool cpubj=false;            //cpu got a blackjack
+    bool gameEnd=false;          //holds game end state 
     int betAmnt;
     //Create map for score
     map <string,int> score_map; //holds wins, losses and pushes
@@ -92,13 +94,18 @@ int main(int argc, char** argv) {
         //initial deal of two cards to player and cpu
         frstDeal(myDeck,nDealt,p1,cpu,p1HandT,cpuHandT);
         //Player's hit/stand phase
-        plyrTrn(p1,myDeck,p1bj,nDealt,p1HandT);
+        plyrTrn(p1,myDeck,p1bj,nDealt,p1HandT,gameEnd);
         //CPU's hit/stand phase
-        cpuTrn(cpu,myDeck,cpubj,nDealt,cpuHandT);        
+        cpuTrn(cpu,myDeck,cpubj,nDealt,cpuHandT,gameEnd);
+        //display both player hands
+        cout<<"Here is your final hand:"<<endl;
+        display(p1,p1HandT,gameEnd);
+        cout<<"\nHere is the CPU's final hand:"<<endl;
+        display(cpu,cpuHandT,gameEnd);
         //determine winner/loss/push
         result(p1,cpu,p1bj,cpubj,score_map,betAmnt);
         //reset and reshuffle for continued play
-        reset(myDeck,p1,cpu,nCards,nDealt,p1bj,cpubj,p1HandT,cpuHandT,unshflDck);
+        reset(myDeck,p1,cpu,nCards,nDealt,p1bj,cpubj,p1HandT,cpuHandT,unshflDck,gameEnd);
         shuffle(unshflDck,nCards,myDeck);
         //Ask if user would like to play the game again
         cout<<"Would you like to play again? (Y/N)"<<endl;
@@ -222,13 +229,15 @@ void shuffle(vector<Card> &deck,int n,DeckStack &dckStck){
     }
 }
 
-void frstDeal(DeckStack &myDeck,int &nDealt, Player &p1, Player &cpu,HandTree &p1HandT,HandTree &cpuHandT){
+void frstDeal(DeckStack &myDeck,int &nDealt, Player &p1, Player &cpu,
+        HandTree &p1HandT,HandTree &cpuHandT){
     //initial deal to players
     Card crdCatch;          //holds cards popped
     for(int i=0;i<4;i++){
         if(i%2==0){
             myDeck.pop(crdCatch);
             p1HandT.insertNode(crdCatch);
+            p1HandT.addCard(crdCatch);
             //if first draw is ace set val to 11 instead of 1
             if(crdCatch.getName()=='A'&&nDealt==0)
                 p1.setValue(11);
@@ -236,23 +245,20 @@ void frstDeal(DeckStack &myDeck,int &nDealt, Player &p1, Player &cpu,HandTree &p
             else if(crdCatch.getName()=='A'&&p1.getValue()<11)
                 p1.setValue(11);
             //if first two draws are aces
-            else if(crdCatch.getName()=='A'&&p1.getValue()==11)
+            else if(crdCatch.getName()=='A'&&p1.getValue()==11){
                 p1.setValue(1);
+                p1HandT.addAce(1);
+            }
             //Any other value
             else
                 p1.setValue(crdCatch.getValue());
             nDealt++;
-            cout<<p1.getName()<<" receives card: "<<crdCatch.getName()<<crdCatch.getSuit()
-                <<endl<<p1.getName()<<"'s hand value: "<<p1.getValue()<<endl;
-            cout<<p1.getName()<<" has "<<p1HandT.getNumHand()<<" cards in hand."<<endl;
-            //hand display
-            cout<<p1.getName()<<"'s current hand: ";
-            p1HandT.displayInOrder(p1);
-            cout<<endl;
         }
         if(i%2==1){
             myDeck.pop(crdCatch);
             cpuHandT.insertNode(crdCatch);
+            cpuHandT.addCard(crdCatch);
+            if(crdCatch.getName()=='A')
             //if first draw is ace set val to 11 instead of 1
             if(crdCatch.getName()=='A'&&nDealt==0)
                 cpu.setValue(11);
@@ -260,32 +266,45 @@ void frstDeal(DeckStack &myDeck,int &nDealt, Player &p1, Player &cpu,HandTree &p
             else if(crdCatch.getName()=='A'&&cpu.getValue()<11)
                 cpu.setValue(11);
             //if first two draws are aces
-            else if(crdCatch.getName()=='A'&&cpu.getValue()==11)
+            else if(crdCatch.getName()=='A'&&cpu.getValue()==11){
                 cpu.setValue(1);
+                cpuHandT.addAce(1);
+        }
             else
                 cpu.setValue(crdCatch.getValue());
-            if(nDealt==1){
-                cout<<endl<<"CPU receives hidden card."<<endl;
-                cout<<endl;
-            }
-            else{
-                cout<<endl<<"CPU receives card: "<<crdCatch.getName()<<crdCatch.getSuit()<<endl;
-                cout<<"CPU has "<<cpuHandT.getNumHand()<<" cards in hand."<<endl;
-                cout<<endl;
-            }
             nDealt++;
         }
     }
+    //output from initial deal
+    cout<<p1.getName()<<"'s hand:"<<endl;
+    cout<<"  ____ ________"<<endl;
+    cout<<" |"<<p1HandT.getCard(0).getName()<<p1HandT.getCard(0).getSuit()<<"  |"<<p1HandT.getCard(1).getName()<<p1HandT.getCard(1).getSuit()<<"      |"<<endl;
+    cout<<" |    |        |"<<endl;
+    cout<<" |    |        |"<<endl;
+    cout<<" |    |        |"<<endl;
+    cout<<" |____|______"<<p1HandT.getCard(1).getName()<<p1HandT.getCard(1).getSuit()<<"|"<<endl<<endl<<endl;
+    cout<<cpu.getName()<<"'s hand:"<<endl;
+    cout<<"  ____ ________"<<endl;
+    cout<<" |    |"<<cpuHandT.getCard(1).getName()<<cpuHandT.getCard(1).getSuit()<<"      |"<<endl;
+    cout<<" |    |        |"<<endl;
+    cout<<" |    |        |"<<endl;
+    cout<<" |    |        |"<<endl;
+    cout<<" |____|______"<<cpuHandT.getCard(1).getName()<<cpuHandT.getCard(1).getSuit()<<"|"<<endl<<endl<<endl;
+    
 }
 
-void deal(DeckStack &myDeck,int &nDealt,Player &plyr,HandTree &handT){
+void deal(DeckStack &myDeck,int &nDealt,Player &plyr,HandTree &handT,
+        bool gameEnd){
     Card crdCatch;       //holds popped cards
     myDeck.pop(crdCatch);
     handT.insertNode(crdCatch);
+    handT.addCard(crdCatch);
     //determine value of aces drawn
     if(crdCatch.getName()=='A'){
-        if(plyr.getValue()<=10)
+        if(plyr.getValue()<=10){
             plyr.setValue(11);
+            handT.addAce(1);
+        }
         else
             plyr.setValue(1);
     }
@@ -293,17 +312,11 @@ void deal(DeckStack &myDeck,int &nDealt,Player &plyr,HandTree &handT){
         plyr.setValue(crdCatch.getValue());
     cout<<plyr.getName()<<" hits and receives card: "<<crdCatch.getName()<<crdCatch.getSuit()<<endl;
     cout<<plyr.getName()<<" has "<<handT.getNumHand()<<" cards in hand."<<endl;
-    //display hand
-    string pname;
-    pname=plyr.getName();
-    if(plyr.getName()!="CPU"){
-        cout<<plyr.getName()<<"'s current hand: ";
-        handT.displayInOrder(plyr);
-        cout<<endl;
-    }
+    cout<<endl;
 }
 
-void plyrTrn(Player &p1,DeckStack &myDeck,bool &p1bj,int &nDealt,HandTree &p1HandT){
+void plyrTrn(Player &p1,DeckStack &myDeck,bool &p1bj,int &nDealt,
+        HandTree &p1HandT,bool gameEnd){
     int choice;                  //holds decision to hit, stand, etc
     
     //check for blackjack from initial deal
@@ -321,8 +334,15 @@ void plyrTrn(Player &p1,DeckStack &myDeck,bool &p1bj,int &nDealt,HandTree &p1Han
             }while(choice!=1&&choice!=2);
             cout<<endl;
             if(choice==1){
-                deal(myDeck,nDealt,p1,p1HandT);
+                deal(myDeck,nDealt,p1,p1HandT,gameEnd);
+                //display hand
+                display(p1,p1HandT,gameEnd);
             }
+            if(p1.getValue()>21&&p1HandT.getNumAces()>0){
+                p1.setValue(-10);
+                p1HandT.addAce(-1);
+            }
+            
         }while(choice==1&&p1.getValue()<=21);
         //output result of player's hits/stand
         if(choice==2)cout<<"You stayed at "<<p1.getValue()<<"."<<endl;
@@ -331,7 +351,8 @@ void plyrTrn(Player &p1,DeckStack &myDeck,bool &p1bj,int &nDealt,HandTree &p1Han
     cout<<endl;
 }
 
-void cpuTrn(Player &cpu,DeckStack &myDeck,bool &cpubj,int &nDealt,HandTree &cpuHandT){
+void cpuTrn(Player &cpu,DeckStack &myDeck,bool &cpubj,int &nDealt,
+        HandTree &cpuHandT,bool &gameEnd){
     cout<<"The CPU is now going to hit/stand."<<endl;
     //if cpu has blackjack
     if(cpu.getValue()==21){
@@ -345,14 +366,17 @@ void cpuTrn(Player &cpu,DeckStack &myDeck,bool &cpubj,int &nDealt,HandTree &cpuH
     //hit if under 17
     else{
         do{
-            deal(myDeck,nDealt,cpu,cpuHandT);
+            deal(myDeck,nDealt,cpu,cpuHandT,gameEnd);
         }while(cpu.getValue()<=16);
     }
+    cout<<endl;
+    gameEnd=true;
 }
 
-void result(Player &p1, Player &cpu,bool &p1bj,bool &cpubj,map<string,int> &score,int bet){
+void result(Player &p1, Player &cpu,bool &p1bj,bool &cpubj,map<string,
+        int> &score,int bet){
     int tempFunds=0;           //used to increase/decrease when winning/losing
-    cout<<"Your Hand: "<<p1.getValue()<<"     CPU's Hand: "<<cpu.getValue()<<endl;
+    cout<<"Your hand value: "<<p1.getValue()<<"     CPU's hand value: "<<cpu.getValue()<<endl;
     //if you bust, you lose
     if(p1.getValue()>21){
         cout<<"You busted with "<<p1.getValue()<<"!"<<endl;
@@ -453,7 +477,9 @@ void result(Player &p1, Player &cpu,bool &p1bj,bool &cpubj,map<string,int> &scor
     }
 }
 
-void reset(DeckStack &dckStck,Player &p1,Player &cpu,int n,int &nDealt,bool &p1bj,bool &cpubj,HandTree &p1HandT,HandTree &cpuHandT, vector<Card> deck){
+void reset(DeckStack &dckStck,Player &p1,Player &cpu,int n,int &nDealt,
+           bool &p1bj,bool &cpubj,HandTree &p1HandT,HandTree &cpuHandT, 
+           vector<Card> deck,bool &gameEnd){
     Card card;       //used to pop cards out of deck
     //empty player and CPU hands
     for(int i=0;i<deck.size();i++){
@@ -468,13 +494,18 @@ void reset(DeckStack &dckStck,Player &p1,Player &cpu,int n,int &nDealt,bool &p1b
     while(!dckStck.isEmpty()){
         dckStck.pop(card);
     }
-    //clear player info and cards dealt
+    //clear player info
     p1HandT.resetNumHand();
+    p1HandT.resetNumAces();
+    p1HandT.clearHand();
     cpuHandT.resetNumHand();
+    cpuHandT.resetNumAces();
+    cpuHandT.clearHand();
     p1.resetValue();
     cpu.resetValue();
     p1bj=false;
     cpubj=false;
+    gameEnd=false;
     nDealt=0;
 }
 
@@ -495,8 +526,88 @@ void write(Player p1){
     outFile.close();
 }
 
-void display(Player p1,Player cpu,HandTree p1HandT,HandTree cpuHandT){
-    p1HandT.displayInOrder(p1);
-    cpuHandT.displayInOrder(cpu);
-    
+void display(Player &plyr,HandTree &handT,bool gameEnd){
+    //output hand
+    cout<<plyr.getName()<<"'s hand:"<<endl;
+    if(handT.getNumHand()==2){
+        cout<<"  ____ ________"<<endl;
+        cout<<" |"<<handT.getCard(0).getName()<<handT.getCard(0).getSuit()
+                <<"  |"<<handT.getCard(1).getName()<<handT.getCard(1).getSuit()
+                <<"      |"<<endl;
+        cout<<" |    |        |"<<endl;
+        cout<<" |    |        |"<<endl;
+        cout<<" |    |        |"<<endl;
+        cout<<" |____|______"<<handT.getCard(1).getName()
+                <<handT.getCard(1).getSuit()<<"|"<<endl<<endl<<endl;
+    }
+    else if(handT.getNumHand()==3){
+        cout<<"  ____ ____ ________"<<endl;
+        cout<<" |"<<handT.getCard(0).getName()<<handT.getCard(0).getSuit()
+                <<"  |"<<handT.getCard(1).getName()<<handT.getCard(1).getSuit()
+                <<"  |"<<handT.getCard(2).getName()<<handT.getCard(2).getSuit()
+                <<"      |"<<endl;
+        cout<<" |    |    |        |"<<endl;
+        cout<<" |    |    |        |"<<endl;
+        cout<<" |    |    |        |"<<endl;
+        cout<<" |____|____|______"<<handT.getCard(2).getName()
+                <<handT.getCard(2).getSuit()<<"|"<<endl<<endl<<endl;
+    }
+    else if(handT.getNumHand()==4){
+        cout<<"  ____ ____ ____ ________"<<endl;
+        cout<<" |"<<handT.getCard(0).getName()<<handT.getCard(0).getSuit()
+                <<"  |"<<handT.getCard(1).getName()<<handT.getCard(1).getSuit()
+                <<"  |"<<handT.getCard(2).getName()<<handT.getCard(2).getSuit()
+                <<"  |"<<handT.getCard(3).getName()<<handT.getCard(3).getSuit()
+                <<"      |"<<endl;
+        cout<<" |    |    |    |        |"<<endl;
+        cout<<" |    |    |    |        |"<<endl;
+        cout<<" |    |    |    |        |"<<endl;
+        cout<<" |____|____|____|______"<<handT.getCard(3).getName()
+                <<handT.getCard(3).getSuit()<<"|"<<endl<<endl<<endl;
+    }
+    else if(handT.getNumHand()==5){
+        cout<<"  ____ ____ ____ ____ ________"<<endl;
+        cout<<" |"<<handT.getCard(0).getName()<<handT.getCard(0).getSuit()
+                <<"  |"<<handT.getCard(1).getName()<<handT.getCard(1).getSuit()
+                <<"  |"<<handT.getCard(2).getName()<<handT.getCard(2).getSuit()
+                <<"  |"<<handT.getCard(3).getName()<<handT.getCard(3).getSuit()
+                <<"  |"<<handT.getCard(4).getName()<<handT.getCard(4).getSuit()
+                <<"      |"<<endl;
+        cout<<" |    |    |    |    |        |"<<endl;
+        cout<<" |    |    |    |    |        |"<<endl;
+        cout<<" |    |    |    |    |        |"<<endl;
+        cout<<" |____|____|____|____|______"<<handT.getCard(4).getName()
+                <<handT.getCard(4).getSuit()<<"|"<<endl<<endl<<endl;
+    }
+    else if(handT.getNumHand()==6){
+        cout<<"  ____ ____ ____ ____ ____ ________"<<endl;
+        cout<<" |"<<handT.getCard(0).getName()<<handT.getCard(0).getSuit()
+                <<"  |"<<handT.getCard(1).getName()<<handT.getCard(1).getSuit()
+                <<"  |"<<handT.getCard(2).getName()<<handT.getCard(2).getSuit()
+                <<"  |"<<handT.getCard(3).getName()<<handT.getCard(3).getSuit()
+                <<"  |"<<handT.getCard(4).getName()<<handT.getCard(4).getSuit()
+                <<"  |"<<handT.getCard(5).getName()<<handT.getCard(5).getSuit()
+                <<"      |"<<endl;
+        cout<<" |    |    |    |    |    |        |"<<endl;
+        cout<<" |    |    |    |    |    |        |"<<endl;
+        cout<<" |    |    |    |    |    |        |"<<endl;
+        cout<<" |____|____|____|____|____|______"<<handT.getCard(5).getName()
+                <<handT.getCard(5).getSuit()<<"|"<<endl<<endl<<endl;
+    }
+    else if(handT.getNumHand()==7){
+        cout<<"  ____ ____ ____ ____ ____ ____ ________"<<endl;
+        cout<<" |"<<handT.getCard(0).getName()<<handT.getCard(0).getSuit()
+                <<"  |"<<handT.getCard(1).getName()<<handT.getCard(1).getSuit()
+                <<"  |"<<handT.getCard(2).getName()<<handT.getCard(2).getSuit()
+                <<"  |"<<handT.getCard(3).getName()<<handT.getCard(3).getSuit()
+                <<"  |"<<handT.getCard(4).getName()<<handT.getCard(4).getSuit()
+                <<"  |"<<handT.getCard(5).getName()<<handT.getCard(5).getSuit()
+                <<"  |"<<handT.getCard(6).getName()<<handT.getCard(6).getSuit()
+                <<"      |"<<endl;
+        cout<<" |    |    |    |    |    |    |        |"<<endl;
+        cout<<" |    |    |    |    |    |    |        |"<<endl;
+        cout<<" |    |    |    |    |    |    |        |"<<endl;
+        cout<<" |____|____|____|____|____|____|______"<<handT.getCard(6).getName()
+                <<handT.getCard(6).getSuit()<<"|"<<endl<<endl<<endl;
+    }    
 }

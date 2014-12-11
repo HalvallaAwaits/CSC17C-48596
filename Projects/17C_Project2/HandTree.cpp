@@ -15,6 +15,7 @@ using namespace std;
 HandTree::HandTree(){
     root=NULL;
     numHand=0;
+    numAces=0;
 }
 
 //public insert function

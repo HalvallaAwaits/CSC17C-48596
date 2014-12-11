@@ -23,6 +23,8 @@ private:
     };
     TreeNode *root;           //Points to the root node
     int numHand;              //number of cards in hand
+    int numAces;              //number of aces in hand
+    vector<Card> hand;        //holds hand in vector form, for display
     
     //Private Member functions
     void insert(TreeNode *&, TreeNode *&);
@@ -44,6 +46,12 @@ public:
     void remove(Card);
     void resetNumHand()
         {numHand=0;}
+    void addCard(Card crd)
+        {hand.push_back(crd);}
+    void addAce(int n)
+        {numAces+=n;}
+    void resetNumAces()
+        {numAces=0;}
     //Accessors
     bool searchNode(Card);
     //Displays using all 3 versions of traversal
@@ -54,6 +62,12 @@ public:
         {displayPostOrder(root);}    
     int getNumHand()
         {return numHand;}
+    int getNumAces()
+        {return numAces;}
+    Card getCard(int n)
+        {return hand[n];}
+    void clearHand()
+        {hand.clear();}
 };
 
 #endif	/* HANDTREE_H */
