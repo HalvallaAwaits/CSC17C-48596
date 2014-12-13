@@ -64,6 +64,7 @@ int main(int argc, char** argv) {
     bool cpubj=false;            //cpu got a blackjack
     bool gameEnd=false;          //holds game end state 
     int betAmnt;
+    
     //Create map for score
     map <string,int> score_map; //holds wins, losses and pushes
     score_map["P1 Wins: "]=0;
@@ -74,44 +75,57 @@ int main(int argc, char** argv) {
     
     //Introduce the game
     cout<<"Welcome to Black Jack!"<<endl<<endl;
+    
     //get user information
     userInfo(p1);
+    
     //set starting fund for end game comparison
     strtFnd=p1.getFunds();
+    
     //Begin Play
     do{
         //Create an un-shuffled deck using a vector
         unshflDck=bldDck(nCards);
+        
         //shuffle the deck and put into a DeckStack to begin play with
         shuffle(unshflDck,nCards,myDeck);        
         cout<<"\nBeginning Play!"<<endl<<"Current funds: "<<p1.getFunds()<<endl;
+        
         //ask player how much to bet
         do{
             cout<<"How much would you like to bet (min 5)? ";
             cin>>betAmnt;
         }while(betAmnt<5);
         cout<<endl;
+        
         //initial deal of two cards to player and cpu
         frstDeal(myDeck,nDealt,p1,cpu,p1HandT,cpuHandT);
+        
         //Player's hit/stand phase
         plyrTrn(p1,myDeck,p1bj,nDealt,p1HandT,gameEnd);
+        
         //CPU's hit/stand phase
         cpuTrn(cpu,myDeck,cpubj,nDealt,cpuHandT,gameEnd);
+        
         //display both player hands
         cout<<"Here is your final hand:"<<endl;
         display(p1,p1HandT,gameEnd);
         cout<<"\nHere is the CPU's final hand:"<<endl;
         display(cpu,cpuHandT,gameEnd);
+        
         //determine winner/loss/push
         result(p1,cpu,p1bj,cpubj,score_map,betAmnt);
+        
         //reset and reshuffle for continued play
         reset(myDeck,p1,cpu,nCards,nDealt,p1bj,cpubj,p1HandT,cpuHandT,unshflDck,gameEnd);
         shuffle(unshflDck,nCards,myDeck);
+        
         //Ask if user would like to play the game again
         cout<<"Would you like to play again? (Y/N)"<<endl;
         cin>>again;
         cout<<endl<<endl;
     }while(again=='y'||again=='Y');
+    
     //output overall score and final funds
     cout<<"This Session's Results:"<<endl;
     map<string,int>::iterator iter;
@@ -124,8 +138,10 @@ int main(int argc, char** argv) {
     else if(p1.getFunds()==strtFnd)cout<<"You broke even!"<<endl;
     else
         cout<<"You lost money..."<<endl;
+    
     //update file data before exit
     write(p1);
+    
     //Exit stage right
     return 0;
 }
@@ -143,9 +159,11 @@ void userInfo(Player &p1){
     //prompt for user info
     cout<<"Enter a user ID (if new, will be created): "<<endl;
     cin>>p1name;
+    
     //attempt to open file based on given ID
     fName=p1name+".txt";
     myFile.open(fName.c_str());
+    
     //check to see if file was opened
     if(!myFile.is_open()){
         //if file not opened, create new user
@@ -153,10 +171,13 @@ void userInfo(Player &p1){
         p1.setName(p1name);
         cout<<"Enter a password: ";
         cin>>pass;
+        
         //Hash user's password and store this for future log in comparison
         p1.hash(pass);
+        
         //create file based on player name
         myFile.open(fName.c_str());
+        
         //write player info to file to store for later use
         myFile<<p1.getName()<<"\r\n";
         myFile<<p1.getHash()<<"\r\n";
@@ -172,17 +193,21 @@ void userInfo(Player &p1){
         p1.setName(p1name);
         myFile>>pwhash;
         p1.setHash(pwhash);
+        
         //loop until password is correct
         do{
             cout<<"Enter your password: ";
             cin>>pass;
+            
             //compare hash on file with hash of password player just entered
             for (int i=0;i<pass.length();i++){
                 hash = hash * 101  +  pass[i];
             }
+            
             //if password hash comparison is correct
             if(hash==pwhash){
                 cout<<"Correct password entered!"<<endl;
+                
                 //read in rest of player information
                 myFile>>funds;
                 p1.setFunds(funds);
@@ -192,6 +217,7 @@ void userInfo(Player &p1){
                 p1.setLosses(losses);
                 myFile>>pushes;
                 p1.setPushes(pushes);
+                
                 //output all information
                 cout<<"Name: "<<p1.getName()<<endl;
                 cout<<"Funds: "<<p1.getFunds()<<endl;
@@ -199,6 +225,7 @@ void userInfo(Player &p1){
                 cout<<"Losses: "<<p1.getLosses()<<endl;
                 cout<<"Pushes: "<<p1.getPushes()<<endl;
             }
+            
             //if comparison fails
             else{
                 cout<<"Incorrect password!"<<endl;
@@ -222,6 +249,7 @@ vector<Card> bldDck(int n){
 void shuffle(vector<Card> &deck,int n,DeckStack &dckStck){
     //shuffle vector card deck
     random_shuffle(deck.begin(),deck.end());
+    
     //take vector deck and convert to stack to deal from
     vector<Card>::iterator iter;       //iterator to move through vector
     for(iter=deck.begin();iter!=deck.end();iter++){
@@ -231,40 +259,47 @@ void shuffle(vector<Card> &deck,int n,DeckStack &dckStck){
 
 void frstDeal(DeckStack &myDeck,int &nDealt, Player &p1, Player &cpu,
         HandTree &p1HandT,HandTree &cpuHandT){
-    //initial deal to players
     Card crdCatch;          //holds cards popped
     for(int i=0;i<4;i++){
         if(i%2==0){
+            //deal a card
             myDeck.pop(crdCatch);
             p1HandT.insertNode(crdCatch);
             p1HandT.addCard(crdCatch);
+            
             //if first draw is ace set val to 11 instead of 1
             if(crdCatch.getName()=='A'&&nDealt==0)
                 p1.setValue(11);
+            
             //if first draw is not ace and second is, set ace to 11 value
             else if(crdCatch.getName()=='A'&&p1.getValue()<11)
                 p1.setValue(11);
+            
             //if first two draws are aces
             else if(crdCatch.getName()=='A'&&p1.getValue()==11){
                 p1.setValue(1);
                 p1HandT.addAce(1);
             }
+            
             //Any other value
             else
                 p1.setValue(crdCatch.getValue());
             nDealt++;
         }
         if(i%2==1){
+            //deal a card
             myDeck.pop(crdCatch);
             cpuHandT.insertNode(crdCatch);
-            cpuHandT.addCard(crdCatch);
-            if(crdCatch.getName()=='A')
+            cpuHandT.addCard(crdCatch);            
+            
             //if first draw is ace set val to 11 instead of 1
             if(crdCatch.getName()=='A'&&nDealt==0)
                 cpu.setValue(11);
+            
             //if first draw is not ace and second is, set ace to 11 value
             else if(crdCatch.getName()=='A'&&cpu.getValue()<11)
                 cpu.setValue(11);
+            
             //if first two draws are aces
             else if(crdCatch.getName()=='A'&&cpu.getValue()==11){
                 cpu.setValue(1);
@@ -275,6 +310,7 @@ void frstDeal(DeckStack &myDeck,int &nDealt, Player &p1, Player &cpu,
             nDealt++;
         }
     }
+    
     //output from initial deal
     cout<<p1.getName()<<"'s hand:"<<endl;
     cout<<"  ____ ________"<<endl;
@@ -293,12 +329,14 @@ void frstDeal(DeckStack &myDeck,int &nDealt, Player &p1, Player &cpu,
     
 }
 
-void deal(DeckStack &myDeck,int &nDealt,Player &plyr,HandTree &handT,
-        bool gameEnd){
+void deal(DeckStack &myDeck,int &nDealt,Player &plyr,HandTree &handT,bool gameEnd){
     Card crdCatch;       //holds popped cards
+    
+    //deal a card
     myDeck.pop(crdCatch);
     handT.insertNode(crdCatch);
     handT.addCard(crdCatch);
+    
     //determine value of aces drawn
     if(crdCatch.getName()=='A'){
         if(plyr.getValue()<=10){
@@ -310,6 +348,8 @@ void deal(DeckStack &myDeck,int &nDealt,Player &plyr,HandTree &handT,
     }
     else
         plyr.setValue(crdCatch.getValue());
+    
+    //display draw result
     cout<<plyr.getName()<<" hits and receives card: "<<crdCatch.getName()<<crdCatch.getSuit()<<endl;
     cout<<plyr.getName()<<" has "<<handT.getNumHand()<<" cards in hand."<<endl;
     cout<<endl;
@@ -324,8 +364,11 @@ void plyrTrn(Player &p1,DeckStack &myDeck,bool &p1bj,int &nDealt,
         cout<<"You got a Blackjack!"<<endl;
         p1bj=true;
     }
+    
+    //if not 21
     if(p1.getValue()<21){
         do{
+            //prompt user for hit or stand decision
             cout<<endl<<p1.getName()<<" hand total: "<<p1.getValue()<<endl;
             cout<<"What would you like to do?"<<endl;
             cout<<"1. Hit"<<endl<<"2. Stand"<<endl;
@@ -333,17 +376,24 @@ void plyrTrn(Player &p1,DeckStack &myDeck,bool &p1bj,int &nDealt,
                 cin>>choice;
             }while(choice!=1&&choice!=2);
             cout<<endl;
+            
+            //if choice is 1, deal another card
             if(choice==1){
                 deal(myDeck,nDealt,p1,p1HandT,gameEnd);
+                
                 //display hand
                 display(p1,p1HandT,gameEnd);
             }
+            
+            //if player has aces still at value 11 and this draw busts,
+            //reduce value of existing ace to 1
             if(p1.getValue()>21&&p1HandT.getNumAces()>0){
                 p1.setValue(-10);
                 p1HandT.addAce(-1);
             }
             
         }while(choice==1&&p1.getValue()<=21);
+        
         //output result of player's hits/stand
         if(choice==2)cout<<"You stayed at "<<p1.getValue()<<"."<<endl;
         if(p1.getValue()==21)cout<<"You got 21!"<<endl;
@@ -354,15 +404,18 @@ void plyrTrn(Player &p1,DeckStack &myDeck,bool &p1bj,int &nDealt,
 void cpuTrn(Player &cpu,DeckStack &myDeck,bool &cpubj,int &nDealt,
         HandTree &cpuHandT,bool &gameEnd){
     cout<<"The CPU is now going to hit/stand."<<endl;
+    
     //if cpu has blackjack
     if(cpu.getValue()==21){
         cout<<"The CPU has a blackjack!"<<endl;
         cpubj=true;
     }
+    
     //if cpu has 17 or greater, stand
     else if(cpu.getValue()>=17){
         cout<<"The CPU stands at "<<cpu.getValue()<<"."<<endl;
     }
+    
     //hit if under 17
     else{
         do{
@@ -377,6 +430,7 @@ void result(Player &p1, Player &cpu,bool &p1bj,bool &cpubj,map<string,
         int> &score,int bet){
     int tempFunds=0;           //used to increase/decrease when winning/losing
     cout<<"Your hand value: "<<p1.getValue()<<"     CPU's hand value: "<<cpu.getValue()<<endl;
+    
     //if you bust, you lose
     if(p1.getValue()>21){
         cout<<"You busted with "<<p1.getValue()<<"!"<<endl;
@@ -389,6 +443,7 @@ void result(Player &p1, Player &cpu,bool &p1bj,bool &cpubj,map<string,
         p1.setFunds(tempFunds);
         write(p1);
     }
+    
     //if the cpu busts, you win
     else if(cpu.getValue()>21){
         cout<<"CPU busted with "<<cpu.getValue()<<"!"<<endl;
@@ -408,6 +463,7 @@ void result(Player &p1, Player &cpu,bool &p1bj,bool &cpubj,map<string,
             write(p1);
         }
     }
+    
     //if both have blackjack, push
     else if(p1bj&&cpubj){
         cout<<"This game is a push!"<<endl;
@@ -416,8 +472,10 @@ void result(Player &p1, Player &cpu,bool &p1bj,bool &cpubj,map<string,
         score["Pushes: "]++;
         write(p1);
     }
+    
     //if both have same value
     else if(p1.getValue()==cpu.getValue()){
+        
         //if p1 has blackjack, p1 wins
         if(p1bj){
             cout<<p1.getName()<<" wins!"<<endl;
@@ -430,6 +488,7 @@ void result(Player &p1, Player &cpu,bool &p1bj,bool &cpubj,map<string,
             p1.setFunds(tempFunds);
             write(p1);
         }
+        
         //if cpu has blackjack, cpu wins
         else if(cpubj){
             cout<<"CPU wins with Blackjack!"<<endl;
@@ -442,6 +501,7 @@ void result(Player &p1, Player &cpu,bool &p1bj,bool &cpubj,map<string,
             p1.setFunds(tempFunds);
             write(p1);
         }
+        
         //if just same value, push
         else{
             cout<<"This game is a push!"<<endl;
@@ -451,6 +511,7 @@ void result(Player &p1, Player &cpu,bool &p1bj,bool &cpubj,map<string,
             write(p1);
         }
     }
+    
     //if p1 is closer to 21, p1 wins
     else if(p1.getValue()>cpu.getValue()&&p1.getValue()<=21){
         cout<<p1.getName()<<" wins!"<<endl;
@@ -463,6 +524,7 @@ void result(Player &p1, Player &cpu,bool &p1bj,bool &cpubj,map<string,
         p1.setFunds(tempFunds);
         write(p1);
     }
+    
     //if cpu is closer to 21, cpu wins
     else{
         cout<<"CPU wins with "<<cpu.getValue()<<"!"<<endl;
